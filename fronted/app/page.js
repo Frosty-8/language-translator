@@ -1,4 +1,4 @@
-import { TranslationForm } from '../components/TranslationForm';
+import TranslationForm  from './components/TranslationForm';
 
 export default function Home() {
   return (
