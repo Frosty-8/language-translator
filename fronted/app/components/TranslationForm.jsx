@@ -11,7 +11,7 @@ export default function TranslationForm() {
 
   useEffect(() => {
     // Fetch languages when component mounts
-    fetch('http://localhost:5000/api/languages')
+    fetch('https://language-translator-1-yths.onrender.com/api/languages')
       .then(res => res.json())
       .then(data => setLanguages(data));
   }, []);
@@ -21,7 +21,7 @@ export default function TranslationForm() {
     setLoading(true);
     
     try {
-      const response = await fetch('http://localhost:5000/api/translate', {
+      const response = await fetch('https://language-translator-1-yths.onrender.com/api/translate', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
