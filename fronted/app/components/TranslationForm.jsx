@@ -7,7 +7,7 @@ export default function TranslationForm() {
   const [targetLang, setTargetLang] = useState('en');
   const [languages, setLanguages] = useState({});
   const [result, setResult] = useState(null);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(false);  
 
   useEffect(() => {
     // Fetch languages when component mounts
