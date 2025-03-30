@@ -14,17 +14,24 @@ export default function TranslationForm() {
     // Fetch languages when component mounts
     const fetchLanguages = async () => {
       try {
+        console.log('Fetching languages...');
         const res = await fetch('https://language-translator-1-yths.onrender.com/api/languages');
         if (!res.ok) throw new Error('Failed to fetch languages');
         
         const data = await res.json();
+        console.log('Languages fetched:', data);  
+    
+        if (!data || Object.keys(data).length === 0) throw new Error('Empty language list');
+        
         setLanguages(data);
       } catch (err) {
+        console.error('Language Fetch Error:', err);
         setError('Failed to load languages. Please try again.');
       } finally {
         setLangLoading(false);
       }
     };
+    
 
     fetchLanguages();
   }, []);
@@ -33,25 +40,32 @@ export default function TranslationForm() {
     e.preventDefault();
     setLoading(true);
     setResult(null);
-
+    
     try {
+      console.log('Sending translation request:', { text, targetLang });
+  
       const response = await fetch('https://language-translator-1-yths.onrender.com/api/translate', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ text, target_lang: targetLang }),
       });
-
-      if (!response.ok) throw new Error('Translation failed');
-
+  
       const data = await response.json();
+      console.log('API Translation Response:', data); 
+  
+      if (!data.translation) {
+        throw new Error('No translation received from API');
+      }
+  
       setResult(data);
     } catch (error) {
-      console.error('Error:', error);
+      console.error('Translation Error:', error);
       setResult({ detected_lang_name: 'Unknown', translation: 'Translation error' });
     } finally {
       setLoading(false);
     }
   };
+  
 
   return (
     <div className="max-w-md mx-auto mt-10 p-6 bg-white rounded-lg shadow-md text-black">
@@ -74,24 +88,24 @@ export default function TranslationForm() {
 
         <div className="mb-4">
           <label htmlFor="targetLang" className="block mb-2">Select Target Language</label>
-          <select
-            id="targetLang"
-            value={targetLang}
-            onChange={(e) => setTargetLang(e.target.value)}
-            className="w-full p-2 border rounded"
-            required
-            disabled={langLoading || !languages}
-          >
-            {langLoading ? (
-              <option>Loading languages...</option>
-            ) : languages ? (
-              Object.entries(languages).map(([code, name]) => (
-                <option key={code} value={code}>{name}</option>
-              ))
-            ) : (
-              <option disabled>No languages available</option>
-            )}
-          </select>
+            <select
+              id="targetLang"
+              value={targetLang}
+              onChange={(e) => setTargetLang(e.target.value)}
+              className="w-full p-2 border rounded"
+              required
+              disabled={langLoading || !languages || Object.keys(languages).length === 0}
+            >
+              {langLoading ? (
+                <option>Loading languages...</option>
+              ) : Object.keys(languages).length > 0 ? (
+                Object.entries(languages).map(([code, name]) => (
+                  <option key={code} value={code}>{name}</option>
+                ))
+              ) : (
+                <option disabled>No languages available</option>
+              )}
+            </select>
         </div>
 
         <button

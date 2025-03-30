@@ -14,12 +14,19 @@ def detect_and_translate(text, target_lang):
     """Detects language and translates text"""
     try:
         detected_lang = detect(text)
-    except:
-        detected_lang = "unknown"
+    except Exception as e:
+        print("Language Detection Error:", e)
+        return "unknown", "Language detection failed"
 
-    translator = Translator()
-    translate_text = translator.translate(text, dest=target_lang).text
-    return detected_lang, translate_text
+    try:
+        translator = Translator()
+        translated_text = translator.translate(text, dest=target_lang).text
+    except Exception as e:
+        print("Translation Error:", e)
+        return detected_lang, "Translation failed"
+
+    return detected_lang, translated_text
+
 
 @app.route("/api/languages", methods=['GET'])
 def get_languages():
@@ -29,22 +36,28 @@ def get_languages():
 @app.route("/api/translate", methods=['POST'])
 def translate_api():
     """Handles translation requests"""
-    data = request.json
-    text = data.get('text', '').strip()
-    target_lang = data.get('target_lang', 'en').lower()
+    try:
+        data = request.json
+        text = data.get('text', '').strip()
+        target_lang = data.get('target_lang', 'en').lower()
 
-    if not text:
-        return jsonify({'error': 'Text input is required'}), 400
+        if not text:
+            return jsonify({'error': 'Text input is required'}), 400
 
-    detected_lang, translation = detect_and_translate(text, target_lang)
+        detected_lang, translation = detect_and_translate(text, target_lang)
+        
+        return jsonify({
+            'detected_lang': detected_lang,
+            'detected_lang_name': LANGUAGES.get(detected_lang, 'Unknown'),
+            'translation': translation,
+            'target_lang': target_lang,
+            'target_lang_name': LANGUAGES.get(target_lang, 'Unknown')
+        })
 
-    return jsonify({
-        'detected_lang': detected_lang,
-        'detected_lang_name': LANGUAGES.get(detected_lang, 'Unknown'),
-        'translation': translation,
-        'target_lang': target_lang,
-        'target_lang_name': LANGUAGES.get(target_lang, 'Unknown')
-    })
+    except Exception as e:
+        print("API Error:", e)
+        return jsonify({'error': 'Internal Server Error', 'details': str(e)}), 500
+
 
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 5000))
