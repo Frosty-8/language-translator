@@ -1,7 +1,7 @@
 from flask import Flask, request, jsonify
 from flask_cors import CORS
 from langdetect import detect, DetectorFactory
-from googletrans import Translator, LANGUAGES
+from deep_translator import GoogleTranslator
 import os
 
 # Ensure consistent language detection
@@ -9,6 +9,10 @@ DetectorFactory.seed = 0
 
 app = Flask(__name__)
 CORS(app)
+
+# Define supported languages manually (deep_translator doesn't have a LANGUAGES dictionary)
+SUPPORTED_LANGUAGES = GoogleTranslator().get_supported_languages(as_dict=True)
+
 
 def detect_and_translate(text, target_lang):
     """Detects language and translates text"""
@@ -19,8 +23,8 @@ def detect_and_translate(text, target_lang):
         return "unknown", "Language detection failed"
 
     try:
-        translator = Translator()
-        translated_text = translator.translate(text, dest=target_lang).text
+        translator = GoogleTranslator(source='auto', target=target_lang)
+        translated_text = translator.translate(text)
     except Exception as e:
         print("Translation Error:", e)
         return detected_lang, "Translation failed"
@@ -31,7 +35,8 @@ def detect_and_translate(text, target_lang):
 @app.route("/api/languages", methods=['GET'])
 def get_languages():
     """Returns available languages"""
-    return jsonify(LANGUAGES)
+    return jsonify(SUPPORTED_LANGUAGES)
+
 
 @app.route("/api/translate", methods=['POST'])
 def translate_api():
@@ -44,14 +49,17 @@ def translate_api():
         if not text:
             return jsonify({'error': 'Text input is required'}), 400
 
+        if target_lang not in SUPPORTED_LANGUAGES:
+            return jsonify({'error': 'Unsupported language'}), 400
+
         detected_lang, translation = detect_and_translate(text, target_lang)
         
         return jsonify({
             'detected_lang': detected_lang,
-            'detected_lang_name': LANGUAGES.get(detected_lang, 'Unknown'),
+            'detected_lang_name': SUPPORTED_LANGUAGES.get(detected_lang, 'Unknown'),
             'translation': translation,
             'target_lang': target_lang,
-            'target_lang_name': LANGUAGES.get(target_lang, 'Unknown')
+            'target_lang_name': SUPPORTED_LANGUAGES.get(target_lang, 'Unknown')
         })
 
     except Exception as e:
